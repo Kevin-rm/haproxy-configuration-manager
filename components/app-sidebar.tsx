@@ -102,7 +102,7 @@ function SidebarHeaderContent({content}: {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <Link href={content.url}>
+        <a href={content.url}>
           <SidebarMenuButton
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -116,7 +116,7 @@ function SidebarHeaderContent({content}: {
               <span className="truncate text-xs">{content.subtitle}</span>
             </div>
           </SidebarMenuButton>
-        </Link>
+        </a>
       </SidebarMenuItem>
     </SidebarMenu>
   );
@@ -209,8 +209,8 @@ const NavLink = forwardRef(({text, url, icon: Icon, ...props}: {
   url: string;
   icon?: LucideIcon;
 }, ref) => (
-  <a href={url} ref={ref} {...props}>
+  <Link href={url} ref={ref} {...props}>
     {Icon && <Icon/>}
     <span>{text}</span>
-  </a>
+  </Link>
 ));

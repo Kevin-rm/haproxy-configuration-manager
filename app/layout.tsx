@@ -12,7 +12,6 @@ import {
   BreadcrumbList, BreadcrumbPage,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import {Slot} from "@radix-ui/react-slot";
 
 export const metadata: Metadata = {
   title: "HAProxy configuration manager"
