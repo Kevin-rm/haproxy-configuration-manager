@@ -34,11 +34,11 @@ const data = {
       subItems: [
         {
           title: "Liste",
-          url: "#"
+          url: "/backend"
         },
         {
           title: "Ajout",
-          url: "#"
+          url: "/backend/ajout"
         }
       ]
     },
@@ -48,29 +48,29 @@ const data = {
       subItems: [
         {
           title: "Liste",
-          url: "#"
+          url: "/frontend"
         },
         {
           title: "Ajout",
-          url: "#"
+          url: "/frontend/ajout"
         }
       ]
     },
     {
       title: "Fichier de configuration",
-      url: "#",
+      url: "/fichier-configuration",
       icon: FileCog
     }
   ],
   otherItems: [
     {
       title: "Voir les logs",
-      url: "#",
+      url: "/logs",
       icon: FileText
     },
     {
       title: "Activer/Désactiver le serveur",
-      url: "#",
+      url: "/activer-desactiver-serveur",
       icon: Server
     }
   ]
