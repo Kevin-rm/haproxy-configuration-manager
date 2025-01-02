@@ -5,6 +5,7 @@ import {
   AudioWaveform,
   BookOpen,
   Bot,
+  Cog,
   Command,
   Frame,
   GalleryVerticalEnd,
@@ -18,9 +19,11 @@ import {NavMain} from "@/components/nav-main"
 import {NavProjects} from "@/components/nav-projects"
 import {Sidebar, SidebarContent, SidebarHeader, SidebarRail,} from "@/components/ui/sidebar"
 import SidebarHeaderContent from "@/components/sidebar-header-content";
+import NavGeneral from "@/components/nav-general";
+import NavParametres from "@/components/nav-parametres";
 
 // This is sample data.
-const data = {
+const data1 = {
   user: {
     name: "shadcn",
     email: "m@example.com",
@@ -149,15 +152,24 @@ const data = {
   ],
 }
 
+const data = {
+  headerContent: {
+    title: "HAProxy Manager",
+    subtitle: "Application",
+    href: "/",
+    icon: Cog
+  }
+};
+
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <SidebarHeaderContent/>
+        <SidebarHeaderContent content={data.headerContent}/>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain}/>
-        <NavProjects projects={data.projects}/>
+        <NavGeneral/>
+        <NavParametres/>
       </SidebarContent>
       <SidebarRail/>
     </Sidebar>
