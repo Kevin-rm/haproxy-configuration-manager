@@ -204,11 +204,11 @@ function NavigationOthers({items}: {
   );
 }
 
-const NavLink = forwardRef(({text, url, icon: Icon, ...props}: {
-  text: string;
-  url: string;
-  icon?: LucideIcon;
-}, ref) => (
+const NavLink = forwardRef<HTMLAnchorElement, {
+  text: string
+  url: string
+  icon?: LucideIcon
+}>(({text, url, icon: Icon, ...props}, ref) => (
   <Link href={url} ref={ref} {...props}>
     {Icon && <Icon/>}
     <span>{text}</span>
