@@ -76,7 +76,7 @@ const data = {
   ]
 };
 
-export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>): JSX.Element {
+export default function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>): JSX.Element {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -160,7 +160,7 @@ function NavigationMain({items}: {
                     {items.subItems.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <NavLink text={subItem.title} url={subItem.url}/>
+                          <NavLink text={subItem.title} url={subItem.url} onClick={}/>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
