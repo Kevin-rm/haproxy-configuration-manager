@@ -160,7 +160,7 @@ function NavigationMain({items}: {
                     {items.subItems.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <NavLink text={subItem.title} url={subItem.url} onClick={}/>
+                          <NavLink text={subItem.title} url={subItem.url}/>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
