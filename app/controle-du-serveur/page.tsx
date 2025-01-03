@@ -2,7 +2,7 @@
 
 import {JSX} from "react";
 
-export default function ServerActivationControl(): JSX.Element {
+export default function ServerControl(): JSX.Element {
   return (
     <>
     </>

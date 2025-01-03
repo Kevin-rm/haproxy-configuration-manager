@@ -29,7 +29,7 @@ const data = {
   },
   mainItems: [
     {
-      title: "Home",
+      title: "Accueil",
       url: "/",
       icon: House
     },
@@ -74,8 +74,8 @@ const data = {
       icon: FileText
     },
     {
-      title: "Activer/Désactiver le serveur",
-      url: "/activer-desactiver-serveur",
+      title: "Contrôle du serveur",
+      url: "/controle-du-serveur",
       icon: Server
     }
   ]
