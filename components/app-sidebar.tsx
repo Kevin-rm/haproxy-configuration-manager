@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import {forwardRef, JSX} from "react"
-import {BrainCircuit, ChevronRight, Cog, FileCog, FileText, Globe, LucideIcon, Server,} from "lucide-react"
+import {BrainCircuit, ChevronRight, Cog, FileCog, FileText, Globe, House, LucideIcon, Server,} from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +28,11 @@ const data = {
     icon: Cog
   },
   mainItems: [
+    {
+      title: "Home",
+      url: "/",
+      icon: House
+    },
     {
       title: "Backend",
       icon: BrainCircuit,
@@ -78,7 +83,7 @@ const data = {
 
 export default function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>): JSX.Element {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarHeaderContent content={data.headerContent}/>
       </SidebarHeader>
@@ -102,11 +107,12 @@ function SidebarHeaderContent({content}: {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <a href={content.url}>
-          <SidebarMenuButton
-            size="lg"
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-          >
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          asChild
+        >
+          <a href={content.url}>
             <div
               className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               {<content.icon className="size-5"/>}
@@ -115,8 +121,8 @@ function SidebarHeaderContent({content}: {
               <span className="truncate font-semibold">{content.title}</span>
               <span className="truncate text-xs">{content.subtitle}</span>
             </div>
-          </SidebarMenuButton>
-        </a>
+          </a>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
   );
