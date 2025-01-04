@@ -1,165 +1,222 @@
 "use client"
 
 import * as React from "react"
+import {forwardRef, JSX} from "react"
+import {BrainCircuit, ChevronRight, Cog, FileCog, FileText, Globe, House, LucideIcon, Server,} from "lucide-react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@/components/ui/collapsible";
+import Link from "next/link";
 
-import {NavMain} from "@/components/nav-main"
-import {NavProjects} from "@/components/nav-projects"
-import {Sidebar, SidebarContent, SidebarHeader, SidebarRail,} from "@/components/ui/sidebar"
-import SidebarHeaderContent from "@/components/sidebar-header-content";
-
-// This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+  headerContent: {
+    title: "HAProxy Manager",
+    subtitle: "Application",
+    url: "/",
+    icon: Cog
   },
-  teams: [
+  mainItems: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      title: "Accueil",
+      url: "/",
+      icon: House
     },
     {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
+      title: "Backend",
+      icon: BrainCircuit,
+      subItems: [
+        {
+          title: "Liste",
+          url: "/backend"
+        },
+        {
+          title: "Ajout",
+          url: "/backend/ajout"
+        }
+      ]
     },
     {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
+      title: "Frontend",
+      icon: Globe,
+      subItems: [
+        {
+          title: "Liste",
+          url: "/frontend"
+        },
+        {
+          title: "Ajout",
+          url: "/frontend/ajout"
+        }
+      ]
     },
+    {
+      title: "Fichier de configuration",
+      url: "/fichier-configuration",
+      icon: FileCog
+    }
   ],
-  navMain: [
+  otherItems: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
+      title: "Voir les logs",
+      url: "/logs",
+      icon: FileText
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+      title: "Contrôle du serveur",
+      url: "/controle-du-serveur",
+      icon: Server
+    }
+  ]
+};
 
-export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
+export default function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>): JSX.Element {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
-        <SidebarHeaderContent/>
+        <SidebarHeaderContent content={data.headerContent}/>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain}/>
-        <NavProjects projects={data.projects}/>
+        <NavigationMain items={data.mainItems}/>
+        <NavigationOthers items={data.otherItems}/>
       </SidebarContent>
       <SidebarRail/>
     </Sidebar>
   );
 }
+
+function SidebarHeaderContent({content}: {
+  content: {
+    title: string;
+    subtitle: string;
+    url: string;
+    icon: LucideIcon;
+  }
+}): JSX.Element {
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          asChild
+        >
+          <a href={content.url}>
+            <div
+              className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              {<content.icon className="size-5"/>}
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-semibold">{content.title}</span>
+              <span className="truncate text-xs">{content.subtitle}</span>
+            </div>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+function NavigationMain({items}: {
+  items: {
+    title: string;
+    icon: LucideIcon;
+    isActive?: boolean;
+    url?: string;
+    subItems?: {
+      title: string;
+      url: string;
+    }[]
+  }[]
+}): JSX.Element {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Général</SidebarGroupLabel>
+      <SidebarMenu>
+        {items.map((items) => (
+          items.subItems ? (
+            <Collapsible
+              key={items.title}
+              asChild
+              defaultOpen={items.isActive}
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={items.title}>
+                    {<items.icon/>}
+                    <span>{items.title}</span>
+                    <ChevronRight
+                      className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"/>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {items.subItems.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.title}>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink text={subItem.title} url={subItem.url}/>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          ) : (
+            <SidebarMenuItem key={items.title}>
+              <SidebarMenuButton tooltip={items.title} asChild>
+                <NavLink text={items.title} url={items.url || "#"} icon={items.icon}/>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
+function NavigationOthers({items}: {
+  items: {
+    title: string;
+    url: string;
+    icon: LucideIcon;
+  }[]
+}): JSX.Element {
+  return (
+    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+      <SidebarGroupLabel>Autres</SidebarGroupLabel>
+      <SidebarMenu>
+        {items.map((item) => (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton asChild>
+              <NavLink text={item.title} url={item.url} icon={item.icon}/>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
+const NavLink = forwardRef<HTMLAnchorElement, {
+  text: string
+  url: string
+  icon?: LucideIcon
+}>(({text, url, icon: Icon, ...props}, ref) => (
+  <Link href={url} ref={ref} {...props}>
+    {Icon && <Icon/>}
+    <span>{text}</span>
+  </Link>
+));
