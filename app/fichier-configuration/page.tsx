@@ -1,6 +1,6 @@
 "use client";
 
-import {JSX, useEffect, useState} from "react";
+import React, {JSX, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Save} from "lucide-react";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
@@ -12,12 +12,8 @@ export default function ConfigFilePage(): JSX.Element {
   const [configContent, setConfigContent] = useState<string>("");
 
   const loadConfigContent = async () => {
-    try {
-      const response = await fetch("/api/config-file");
-      return await response.json();
-    } catch (error) {
-      console.error(error);
-    }
+    const response = await fetch("/api/config-file");
+    return await response.json();
   };
 
   useEffect(() => {
@@ -51,7 +47,6 @@ export default function ConfigFilePage(): JSX.Element {
               className="font-mono"
               rows={30}
               defaultValue={configContent}
-              onChange={(e) => {setConfigContent(e.target.value)}}
             />
           </CardContent>
         </Card>
