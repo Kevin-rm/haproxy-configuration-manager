@@ -28,7 +28,7 @@ export default function ConfigFilePage(): JSX.Element {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Fichier de configuration</h1>
-            <p className="text-muted-foreground">Vue et modification direct du fichier de configuration</p>
+            <p className="text-muted-foreground">Modification directe des configurations d'HAProxy</p>
           </div>
           <div className="space-x-2">
             <Button>
@@ -40,7 +40,7 @@ export default function ConfigFilePage(): JSX.Element {
         <Card>
           <CardHeader>
             <CardTitle>{HAPROXY_CONFIG_FILE_PATH}</CardTitle>
-            <CardDescription>Editer ci-dessous le contenu du fichier</CardDescription>
+            <CardDescription>Ci-dessous son contenu</CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
