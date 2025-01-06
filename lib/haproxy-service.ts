@@ -9,8 +9,8 @@ export function getConfigFileContents(): string {
   }
 }
 
-export function parseConfigFile() {
-  const lines = fs.readFileSync(HAPROXY_CONFIG_FILE_PATH, "utf-8").split("\n");
+export function parseConfigFileContents(contents: string) {
+  const lines = contents.split("\n");
   const config = {
     global: [],
     defaults: [],
