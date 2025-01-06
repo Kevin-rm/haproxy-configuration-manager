@@ -1,11 +1,19 @@
 import fs from "fs";
-import {HAPROXY_CONFIG_FILE_PATH} from "@/lib/constants";
+import {HAPROXY_CONFIG_FILE_PATH, UTF8_ENCODING} from "@/lib/constants";
 
 export function getConfigFileContents(): string {
   try {
-    return fs.readFileSync(HAPROXY_CONFIG_FILE_PATH, "utf8");
+    return fs.readFileSync(HAPROXY_CONFIG_FILE_PATH, UTF8_ENCODING);
   } catch (error) {
-    throw new Error("Impossible de recupérer le contenu du fichier de configuration");
+    throw new Error("Impossible de recupérer le contenu du fichier de configuration", {cause: error});
+  }
+}
+
+export function saveConfigFile(contents: string): void {
+  try {
+    fs.writeFileSync(HAPROXY_CONFIG_FILE_PATH, contents, UTF8_ENCODING);
+  } catch (error) {
+    throw new Error("Erreur durant la sauvegarde du fichier de configuration", {cause: error});
   }
 }
 
@@ -42,7 +50,7 @@ export function parseConfigFileContents(contents: string) {
   return config;
 }
 
-export function saveConfigFile(config) {
+export function generateConfigFileContents(config) {
   const lines = [];
 
   function sectionToText(section) {
@@ -56,5 +64,5 @@ export function saveConfigFile(config) {
   config.frontends.forEach((frontend) => lines.push(sectionToText(frontend)));
   config.backends.forEach((backend) => lines.push(sectionToText(backend)));
 
-  fs.writeFileSync(HAPROXY_CONFIG_FILE_PATH, lines.join("\n"), "utf-8");
+  return lines.join("\n");
 }
