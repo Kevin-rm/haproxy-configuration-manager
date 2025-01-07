@@ -9,7 +9,7 @@ export function getConfigFileContents(): string {
   }
 }
 
-export function saveConfigFile(contents: string): void {
+export function writeContentsToConfigFile(contents: string): void {
   try {
     fs.writeFileSync(HAPROXY_CONFIG_FILE_PATH, contents, UTF8_ENCODING);
   } catch (error) {
@@ -17,52 +17,143 @@ export function saveConfigFile(contents: string): void {
   }
 }
 
-export function parseConfigFileContents(contents: string) {
-  const lines = contents.split("\n");
-  const config = {
-    global: [],
-    defaults: [],
-    frontends: [],
-    backends: [],
-  };
-
-  let currentSection = null;
-
-  lines.forEach((line) => {
-    const trimmedLine = line.trim();
-    if (trimmedLine.startsWith("frontend")) {
-      currentSection = {type: "frontend", name: trimmedLine.split(" ")[1], config: []};
-      config.frontends.push(currentSection);
-    } else if (trimmedLine.startsWith("backend")) {
-      currentSection = {type: "backend", name: trimmedLine.split(" ")[1], config: []};
-      config.backends.push(currentSection);
-    } else if (trimmedLine.startsWith("global")) {
-      currentSection = {type: "global", config: []};
-      config.global.push(currentSection);
-    } else if (trimmedLine.startsWith("defaults")) {
-      currentSection = {type: "defaults", config: []};
-      config.defaults.push(currentSection);
-    } else if (currentSection) {
-      currentSection.config.push(trimmedLine);
-    }
-  });
-
-  return config;
+interface Server {
+  name: string;
+  ip_address: string;
+  port: number;
+  check?: boolean;
 }
 
-export function generateConfigFileContents(config) {
-  const lines = [];
+interface Bind {
+  ip_address: string;
+  port: number;
+}
 
-  function sectionToText(section) {
-    const sectionLines = [`${section.type} ${section.name || ""}`.trim()];
-    sectionLines.push(...section.config);
-    return sectionLines.join("\n");
+interface Backend {
+  name: string;
+  mode?: "http" | "tcp";
+  servers: Server[];
+}
+
+interface Frontend {
+  name: string;
+  mode?: "http" | "tcp";
+  binds: Bind[],
+  default_backend: Backend;
+}
+
+interface HAProxyConfig {
+  global: string[];
+  defaults: string[];
+  frontends: Frontend[];
+  backends: Backend[];
+}
+
+export function parseConfigFileContents(contents: string): HAProxyConfig {
+  const lines = contents.split("\n");
+
+  const global: string[] = [];
+  const defaults: string[] = [];
+  const frontends: Frontend[] = [];
+  const backends: Backend[] = [];
+
+  let currentSection: "frontend" | "backend" | "global" | "defaults" | null = null;
+  let currentFrontend: Partial<Frontend> | null = null;
+  let currentBackend: Partial<Backend> | null = null;
+
+  const parseBindLine = (line: string): Bind => {
+    const parts = line.split(" ")[1].split(":");
+    return {
+      ip_address: parts[0],
+      port: parseInt(parts[1], 10)
+    };
+  };
+
+  const parseServerLine = (line: string): Server => {
+    const parts = line.split(" ");
+    const [name, address] = parts.slice(1);
+    const [ip, port] = address.split(":");
+    return {
+      name,
+      ip_address: ip,
+      port: parseInt(port, 10),
+      check: parts.includes("check")
+    };
+  };
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    if (trimmedLine === "" || trimmedLine.startsWith("#")) continue;
+
+    if (trimmedLine.startsWith("frontend")) {
+      currentSection = "frontend";
+      if (currentFrontend) frontends.push(currentFrontend as Frontend);
+
+      currentFrontend = {
+        name: trimmedLine.split(" ")[1],
+        binds: [],
+      };
+      continue;
+    }
+
+    if (trimmedLine.startsWith("backend")) {
+      currentSection = "backend";
+      if (currentBackend) backends.push(currentBackend as Backend);
+
+      currentBackend = {
+        name: trimmedLine.split(" ")[1],
+        servers: []
+      };
+      continue;
+    }
+
+    if (trimmedLine.startsWith("global")) {
+      currentSection = "global";
+      continue;
+    }
+
+    if (trimmedLine.startsWith("defaults")) {
+      currentSection = "defaults";
+      continue;
+    }
+
+    switch (currentSection) {
+      case "frontend":
+        if (!currentFrontend) break;
+
+        if (trimmedLine.startsWith("bind"))
+          currentFrontend.binds?.push(parseBindLine(trimmedLine));
+        else if (trimmedLine.startsWith("mode"))
+          currentFrontend.mode = trimmedLine.split(" ")[1] as "http" | "tcp";
+        else if (trimmedLine.startsWith("default_backend")) {
+          const backendName = trimmedLine.split(" ")[1];
+          const defaultBackend = backends.find(b => b.name === backendName);
+          if (defaultBackend) currentFrontend.default_backend = defaultBackend;
+        }
+        break;
+
+      case "backend":
+        if (!currentBackend) break;
+
+        if (trimmedLine.startsWith("server"))
+          currentBackend.servers?.push(parseServerLine(trimmedLine));
+        else if (trimmedLine.startsWith("mode"))
+          currentBackend.mode = trimmedLine.split(" ")[1] as "http" | "tcp";
+        break;
+
+      case "global":
+        global.push(trimmedLine);
+        break;
+
+      case "defaults":
+        defaults.push(trimmedLine);
+        break;
+    }
   }
 
-  if (config.global.length) lines.push(sectionToText(config.global[0]));
-  if (config.defaults.length) lines.push(sectionToText(config.defaults[0]));
-  config.frontends.forEach((frontend) => lines.push(sectionToText(frontend)));
-  config.backends.forEach((backend) => lines.push(sectionToText(backend)));
+  if (currentFrontend) frontends.push(currentFrontend as Frontend);
+  if (currentBackend) backends.push(currentBackend as Backend);
 
-  return lines.join("\n");
+  return {global, defaults, frontends, backends};
 }
