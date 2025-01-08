@@ -29,13 +29,13 @@ interface Bind {
   port: number;
 }
 
-interface Backend {
+export interface Backend {
   name: string;
   mode?: "http" | "tcp";
   servers: Server[];
 }
 
-interface Frontend {
+export interface Frontend {
   name: string;
   mode?: "http" | "tcp";
   binds: Bind[],
