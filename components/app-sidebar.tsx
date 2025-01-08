@@ -42,8 +42,8 @@ const data = {
           url: "/backend"
         },
         {
-          title: "Ajout",
-          url: "/backend/ajout"
+          title: "Formulaire",
+          url: "/backend/formulaire"
         }
       ]
     },
@@ -56,8 +56,8 @@ const data = {
           url: "/frontend"
         },
         {
-          title: "Ajout",
-          url: "/frontend/ajout"
+          title: "Formulaire",
+          url: "/frontend/formulaire"
         }
       ]
     },
@@ -83,7 +83,7 @@ const data = {
 
 export default function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>): JSX.Element {
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarHeaderContent content={data.headerContent}/>
       </SidebarHeader>

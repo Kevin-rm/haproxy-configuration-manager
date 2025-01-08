@@ -5,6 +5,7 @@ import {ThemeProvider} from "@/components/theme-provider";
 import {SidebarInset, SidebarProvider} from "@/components/ui/sidebar";
 import AppSidebar from "@/components/app-sidebar";
 import {Inter} from "next/font/google";
+import {Toaster} from "@/components/ui/toaster";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -25,6 +26,7 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
       <SidebarProvider>
         <AppSidebar/>
         <SidebarInset>{children}</SidebarInset>
+        <Toaster/>
       </SidebarProvider>
     </ThemeProvider>
     </body>
