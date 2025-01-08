@@ -142,9 +142,9 @@ export default function BackendList() {
                           style={{height: getScrollAreaHeight(backend.servers.length)}}
                         >
                           <div className="grid gap-4 pr-4">
-                            {backend.servers.map((server) => (
+                            {backend.servers.map((server, index) => (
                               <div
-                                key={`${backend.name}-${server.name}`}
+                                key={index}
                                 className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
                               >
                                 <div className="space-y-1">
@@ -162,15 +162,10 @@ export default function BackendList() {
                                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                   }`}
                                 >
-                                  {server.check ? (
-                                    <>
-                                      <CheckCircle2 className="h-3 w-3"/> Check actif
-                                    </>
-                                  ) : (
-                                    <>
-                                      <XCircle className="h-3 w-3"/> Check inactif
-                                    </>
-                                  )}
+                                  {server.check ?
+                                    (<><CheckCircle2 className="h-3 w-3"/> Check actif</>) :
+                                    (<><XCircle className="h-3 w-3"/> Check inactif</>)
+                                  }
                                 </Badge>
                               </div>
                             ))}
