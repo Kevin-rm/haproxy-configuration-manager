@@ -8,7 +8,6 @@ import {Textarea} from "@/components/ui/textarea";
 import ContentLayout from "@/components/content-layout";
 import {HAPROXY_CONFIG_FILE_PATH} from "@/lib/constants";
 import {useToast} from "@/hooks/use-toast";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 const fetchConfigFile = async () => {
   const response = await fetch("/api/config-file");
@@ -84,9 +83,8 @@ export default function ConfigFilePage(): JSX.Element {
   };
 
   const handleReset = () => {
-    if (confirm("Voulez-vous vraiment annuler tous les changements ?")) {
+    if (confirm("Voulez-vous vraiment annuler tous les changements ?"))
       setConfigContent(originalContent);
-    }
   };
 
   useEffect(() => {
@@ -101,7 +99,7 @@ export default function ConfigFilePage(): JSX.Element {
     <ContentLayout breadcrumbItems={[{label: "Fichier de configuration"}]}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div>
+          <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Fichier de configuration</h1>
             <p className="text-muted-foreground">
               Modification directe des configurations d'HAProxy
@@ -142,26 +140,13 @@ export default function ConfigFilePage(): JSX.Element {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Tabs defaultValue="preview" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="preview">Aperçu</TabsTrigger>
-                <TabsTrigger value="editor">Éditeur</TabsTrigger>
-              </TabsList>
-              <TabsContent value="preview">
-                <pre className="font-mono text-sm bg-secondary/5 p-4 min-h-[600px] overflow-auto">
-                  <code>{configContent}</code>
-                </pre>
-              </TabsContent>
-              <TabsContent value="editor">
-                <Textarea
-                  className="font-mono text-sm min-h-[600px] resize-y p-4 bg-secondary/5"
-                  value={configContent}
-                  onChange={(e) => setConfigContent(e.target.value)}
-                  disabled={isLoading}
-                  spellCheck={false}
-                />
-              </TabsContent>
-            </Tabs>
+            <Textarea
+              className="font-mono text-sm min-h-[600px] resize-y p-4 bg-secondary/5"
+              value={configContent}
+              onChange={(e) => setConfigContent(e.target.value)}
+              disabled={isLoading}
+              spellCheck={false}
+            />
           </CardContent>
         </Card>
       </div>

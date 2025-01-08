@@ -42,8 +42,8 @@ const data = {
           url: "/backend"
         },
         {
-          title: "Ajout",
-          url: "/backend/ajout"
+          title: "Formulaire",
+          url: "/backend/formulaire"
         }
       ]
     },
@@ -56,8 +56,8 @@ const data = {
           url: "/frontend"
         },
         {
-          title: "Ajout",
-          url: "/frontend/ajout"
+          title: "Formulaire",
+          url: "/frontend/formulaire"
         }
       ]
     },
