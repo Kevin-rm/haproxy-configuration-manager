@@ -2,74 +2,100 @@
 
 import React, {JSX, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
-import {Loader2, Save} from "lucide-react";
+import {FileCode2, Loader2, RotateCcw, Save} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Textarea} from "@/components/ui/textarea";
 import ContentLayout from "@/components/content-layout";
 import {HAPROXY_CONFIG_FILE_PATH} from "@/lib/constants";
-import {Alert, AlertDescription} from "@/components/ui/alert";
 import {useToast} from "@/hooks/use-toast";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+
+const fetchConfigFile = async () => {
+  const response = await fetch("/api/config-file");
+  if (!response.ok)
+    throw new Error("Erreur lors du chargement de la configuration");
+
+  const data = await response.json();
+  return data.contents;
+};
+
+const saveConfigFile = async (contents: string) => {
+  const response = await fetch("/api/config-file", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({contents}),
+  });
+
+  if (response.ok) return;
+
+  const data = await response.json();
+  throw new Error(data.error || "Erreur lors de la sauvegarde");
+};
 
 export default function ConfigFilePage(): JSX.Element {
   const [configContent, setConfigContent] = useState<string>("");
+  const [originalContent, setOriginalContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const {toast} = useToast();
 
-  const loadConfigContent = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch("/api/config-file");
-      const data = await response.json();
-      setConfigContent(data.contents);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors du chargement du fichier");
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger le fichier de configuration",
+  const handleLoadConfig = () => {
+    setIsLoading(true);
+
+    fetchConfigFile()
+      .then((contents) => {
+        setConfigContent(contents);
+        setOriginalContent(contents);
+      })
+      .catch((error) => {
+        toast({
+          title: "Erreur",
+          description: error.message,
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
-  const saveConfigContent = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch("/api/config-file", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({contents: configContent}),
-      });
+  const handleSaveConfig = () => {
+    setIsLoading(true);
 
-      if (!response.ok) {
-        throw new Error(`Erreur lors de la sauvegarde: ${response.statusText}`);
-      }
+    saveConfigFile(configContent)
+      .then(() => {
+        setOriginalContent(configContent);
+        setHasChanges(false);
+        toast({
+          title: "Succès",
+          description: "Configuration correctement sauvegardée",
+        });
+      })
+      .catch((error) => {
+        toast({
+          title: "Erreur",
+          description: error.message,
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
-      toast({
-        title: "Succès",
-        description: "Configuration sauvegardée avec succès",
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de sauvegarder le fichier de configuration",
-      });
-    } finally {
-      setIsLoading(false);
+  const handleReset = () => {
+    if (confirm("Voulez-vous vraiment annuler tous les changements ?")) {
+      setConfigContent(originalContent);
     }
   };
 
   useEffect(() => {
-    loadConfigContent();
+    handleLoadConfig();
   }, []);
+
+  useEffect(() => {
+    setHasChanges(configContent !== originalContent);
+  }, [configContent, originalContent]);
 
   return (
     <ContentLayout breadcrumbItems={[{label: "Fichier de configuration"}]}>
@@ -83,42 +109,59 @@ export default function ConfigFilePage(): JSX.Element {
           </div>
           <div className="space-x-2">
             <Button
-              onClick={saveConfigContent}
-              disabled={isLoading}
+              variant="outline"
+              onClick={handleReset}
+              disabled={isLoading || !hasChanges}
+            >
+              <RotateCcw/>
+              Réinitialiser
+            </Button>
+            <Button
+              onClick={handleSaveConfig}
+              disabled={isLoading || !hasChanges}
+              className="bg-green-600 hover:bg-green-700"
             >
               {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                <Loader2 className="animate-spin"/>
               ) : (
-                <Save className="mr-2 h-4 w-4"/>
+                <Save/>
               )}
               Sauvegarder
             </Button>
           </div>
         </div>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              {HAPROXY_CONFIG_FILE_PATH}
+        <Card className="shadow-sm">
+          <CardHeader className="bg-secondary/50">
+            <CardTitle className="flex items-center space-x-2">
+              <FileCode2 className="w-5 h-5"/>
+              <span>{HAPROXY_CONFIG_FILE_PATH}</span>
             </CardTitle>
             <CardDescription>
-              Ci-dessous le contenu du fichier
+              Éditeur de configuration HAProxy
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Textarea
-              className="font-mono min-h-[600px] resize-y"
-              placeholder="Chargement..."
-              value={configContent}
-              onChange={(e) => setConfigContent(e.target.value)}
-              disabled={isLoading}
-            />
+          <CardContent className="p-6">
+            <Tabs defaultValue="preview" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="preview">Aperçu</TabsTrigger>
+                <TabsTrigger value="editor">Éditeur</TabsTrigger>
+              </TabsList>
+              <TabsContent value="preview">
+                <pre className="font-mono text-sm bg-secondary/5 p-4 min-h-[600px] overflow-auto">
+                  <code>{configContent}</code>
+                </pre>
+              </TabsContent>
+              <TabsContent value="editor">
+                <Textarea
+                  className="font-mono text-sm min-h-[600px] resize-y p-4 bg-secondary/5"
+                  value={configContent}
+                  onChange={(e) => setConfigContent(e.target.value)}
+                  disabled={isLoading}
+                  spellCheck={false}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
