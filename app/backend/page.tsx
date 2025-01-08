@@ -15,7 +15,7 @@ export default function BackendList() {
   const [, setLoading] = useState<Boolean>(true);
   const [expandedBackends, setExpandedBackends] = useState<Set<string>>(new Set());
 
-  async function fetchBackends() {
+  const fetchBackends = async () => {
     setLoading(true);
 
     const response = await fetch("/api/config-file?parse=true");
@@ -129,7 +129,7 @@ export default function BackendList() {
                 {expandedBackends.has(backend.name) && (
                   <TableRow>
                     <TableCell colSpan={5} className="bg-muted/50 p-6">
-                      <div className="rounded-lg border bg-background p-6">
+                      <div className="rounded-lg border bg-background p-4">
                         <h4 className="text-lg font-semibold mb-4">Liste des serveurs</h4>
                         <div className="grid gap-4">
                           {backend.servers.map((server) => (
