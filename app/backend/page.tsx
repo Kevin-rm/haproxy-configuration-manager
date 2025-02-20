@@ -15,7 +15,7 @@ const SERVER_HEIGHT = 90;
 
 export default function BackendList() {
   const [backends, setBackends] = useState<Backend[]>([]);
-  const [, setLoading] = useState<Boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
   const [expandedBackends, setExpandedBackends] = useState<Set<string>>(new Set());
 
   const getScrollAreaHeight = (serversCount: number) => {
@@ -24,7 +24,7 @@ export default function BackendList() {
     return `${3 * SERVER_HEIGHT}px`;
   };
 
-  const toggleBackend = (backendName) => {
+  const toggleBackend = (backendName: string) => {
     const newExpanded = new Set(expandedBackends);
     if (newExpanded.has(backendName)) newExpanded.delete(backendName);
     else newExpanded.add(backendName);
@@ -42,9 +42,11 @@ export default function BackendList() {
   }
 
   useEffect(() => {
-    fetchBackends().then(data => {
-      setBackends(data);
-    }).finally(() => setLoading(false));
+    fetchBackends()
+      .then(data => {
+        setBackends(data);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
