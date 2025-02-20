@@ -17,32 +17,32 @@ export function writeContentsToConfigFile(contents: string): void {
   }
 }
 
-interface Server {
+type Server = {
   name: string;
   ip_address: string;
   port: number;
   check?: boolean;
 }
 
-interface Bind {
+type Bind = {
   ip_address: string;
   port: number;
 }
 
-export interface Backend {
+export type Backend = {
   name: string;
   mode?: "http" | "tcp";
   servers: Server[];
 }
 
-export interface Frontend {
+export type Frontend = {
   name: string;
   mode?: "http" | "tcp";
   binds: Bind[],
   default_backend: Backend;
 }
 
-interface HAProxyConfig {
+type HAProxyConfig = {
   global: string[];
   defaults: string[];
   frontends: Frontend[];
