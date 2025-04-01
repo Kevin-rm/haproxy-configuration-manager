@@ -13,7 +13,7 @@ import {Button} from "@/components/ui/button";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Checkbox} from "@/components/ui/checkbox";
-import {CirclePlus, Trash2} from "lucide-react";
+import {CirclePlus, ClipboardList, Trash2} from "lucide-react";
 import {Backend} from "@/lib/haproxy-service";
 
 const serverSchema = z.object({
@@ -97,8 +97,9 @@ export default function BackendForm({backend}: { backend?: Backend }) {
 
         <Card className="shadow-sm">
           <CardHeader className="bg-secondary/50">
-            <CardTitle className="flex items-center space-x-2 text-xl">
-              Formulaire
+            <CardTitle className="flex items-center space-x-2">
+              <ClipboardList className="w-5 h-5" />
+              <span>Formulaire</span>
             </CardTitle>
             <CardDescription>
               Entrer les informations de serveur backend
