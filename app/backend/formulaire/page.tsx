@@ -19,13 +19,18 @@ import {Backend} from "@/lib/haproxy-service";
 const serverSchema = z.object({
   name: z.string().min(1, "Le nom du serveur est requis"),
   ip_address: z.string().min(1, "L'adresse IP est requise"),
-  port: z.number().min(1, "Le port est requis"),
+  port: z.number()
+    .min(1, "Le port doit être au moins 1")
+    .max(65535, "Le port ne peut dépasser 65535"),
   check: z.boolean().optional()
 });
 
 const backendSchema = z.object({
   name: z.string().min(1, "Le nom du backend est requis"),
-  mode: z.enum(["http", "tcp"], "Le mode est requis"),
+  mode: z.enum(["http", "tcp"], {
+    required_error: "Le mode est requis",
+    invalid_type_error: "Le mode doit être http ou tcp"
+  }),
   servers: z.array(serverSchema)
 });
 
@@ -38,10 +43,11 @@ export default function BackendForm({backend}: { backend?: Backend }) {
   const form = useForm<BackendFormValues>({
     resolver: zodResolver(backendSchema),
     defaultValues: {
-      name: backend?.name,
-      mode: backend?.mode || "http",
-      servers: backend?.servers
-    }
+      name: backend?.name || "",
+      mode: backend?.mode,
+      servers: backend?.servers || []
+    },
+    shouldUseNativeValidation: false
   });
 
   const {fields, append, remove} = useFieldArray({
@@ -98,7 +104,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
         <Card className="shadow-sm">
           <CardHeader className="bg-secondary/50">
             <CardTitle className="flex items-center space-x-2">
-              <ClipboardList className="w-5 h-5" />
+              <ClipboardList className="w-5 h-5"/>
               <span>Formulaire</span>
             </CardTitle>
             <CardDescription>
@@ -117,7 +123,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                       <FormItem>
                         <FormLabel className="text-base font-semibold">Nom</FormLabel>
                         <FormControl>
-                          <Input className="h-11 bg-secondary/5" placeholder="ex: web_backend" {...field} />
+                          <Input className="h-11 bg-secondary/5" placeholder="ex: web_backend" {...field}/>
                         </FormControl>
                         <FormMessage/>
                       </FormItem>
@@ -161,7 +167,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                       onClick={() => append({name: "", ip_address: "", port: 80, check: false})}
                       className="bg-secondary/5 hover:bg-secondary/20 transition-colors"
                     >
-                      <CirclePlus className="h-4 w-4 mr-2"/>
+                      <CirclePlus className="h-4 w-4"/>
                       Ajouter un serveur
                     </Button>
                   </div>
@@ -193,7 +199,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                           </div>
 
                           <div className="grid gap-5">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                               <FormField
                                 control={form.control}
                                 name={`servers.${index}.name`}
@@ -202,8 +208,8 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                                     <FormLabel>Nom</FormLabel>
                                     <FormControl>
                                       <Input
-                                        className="h-8 bg-background"
-                                        placeholder="ex: server1"
+                                        className="h-9 bg-background"
+                                        placeholder={`ex: server${index + 1}`}
                                         {...field}
                                       />
                                     </FormControl>
@@ -220,7 +226,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                                     <FormLabel>Adresse IP</FormLabel>
                                     <FormControl>
                                       <Input
-                                        className="h-8 bg-background"
+                                        className="h-9 bg-background"
                                         placeholder="ex: 192.168.1.10"
                                         {...field}
                                       />
@@ -229,9 +235,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                                   </FormItem>
                                 )}
                               />
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
                               <FormField
                                 control={form.control}
                                 name={`servers.${index}.port`}
@@ -240,34 +244,45 @@ export default function BackendForm({backend}: { backend?: Backend }) {
                                     <FormLabel>Port</FormLabel>
                                     <FormControl>
                                       <Input
-                                        className="h-8 bg-background"
+                                        className="h-9 bg-background"
                                         type="number"
                                         placeholder="ex: 80"
                                         {...field}
-                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          const num = parseInt(value);
+                                          field.onChange(value === "" || value === "-" || isNaN(num) ? value : num);
+                                        }}
+                                        value={field.value}
                                       />
                                     </FormControl>
                                     <FormMessage/>
                                   </FormItem>
                                 )}
                               />
-
-                              <FormField
-                                control={form.control}
-                                name={`servers.${index}.check`}
-                                render={({field}) => (
-                                  <FormItem className="flex items-center space-x-2 space-y-0 pt-4">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                      />
-                                    </FormControl>
-                                    <FormLabel>Activer la vérification de l'état</FormLabel>
-                                  </FormItem>
-                                )}
-                              />
                             </div>
+
+                            <FormField
+                              control={form.control}
+                              name={`servers.${index}.check`}
+                              render={({field}) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 bg-secondary/10 p-3 rounded-md">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      className="mt-0.5"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel className="font-medium">Vérification d'état</FormLabel>
+                                    <p className="text-xs text-muted-foreground">
+                                      Activer la vérification périodique de disponibilité du serveur
+                                    </p>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
                           </div>
                         </CardContent>
                       </Card>
