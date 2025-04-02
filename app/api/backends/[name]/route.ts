@@ -17,7 +17,7 @@ export const GET = async (request: NextRequest, {params}: { params: { name: stri
     if (!backend)
       return Response.json({
         status_code: StatusCodes.NOT_FOUND,
-        error: `Backend '${backendName}' non trouvé`
+        error: `Backend "${backendName}" non trouvé`
       }, {status: StatusCodes.NOT_FOUND});
 
     return Response.json({
@@ -45,7 +45,7 @@ export const PUT = async (request: NextRequest, {params}: { params: { name: stri
     if (existingBackendIndex === -1)
       return Response.json({
         status_code: StatusCodes.NOT_FOUND,
-        error: `Backend '${backendName}' non trouvé`
+        error: `Backend "${backendName}" non trouvé`
       }, {status: StatusCodes.NOT_FOUND});
 
     backends[existingBackendIndex] = {
@@ -62,7 +62,7 @@ export const PUT = async (request: NextRequest, {params}: { params: { name: stri
   } catch (error) {
     return Response.json({
       status_code: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: error.message,
+      error: error.message,
       cause: error.cause?.message
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }

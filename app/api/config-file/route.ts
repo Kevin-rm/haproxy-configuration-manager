@@ -35,7 +35,7 @@ export const POST = async (request: Request) => {
   } catch (error) {
     return Response.json({
       status_code: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: error.message,
+      error: error.message,
       cause: error.cause.message
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }
