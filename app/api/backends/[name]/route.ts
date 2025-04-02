@@ -9,6 +9,30 @@ import {
 } from "@/lib/haproxy-service";
 import {StatusCodes} from "@/lib/constants";
 
+export const GET = async (request: NextRequest, {params}: { params: { name: string } }) => {
+  try {
+    const backendName: string = params.name;
+
+    const backend = parseConfigFileContents(getConfigFileContents()).backends.find(b => b.name === backendName);
+    if (!backend)
+      return Response.json({
+        status_code: StatusCodes.NOT_FOUND,
+        error: `Backend '${backendName}' non trouvé`
+      }, {status: StatusCodes.NOT_FOUND});
+
+    return Response.json({
+      status_code: StatusCodes.OK,
+      data: backend
+    });
+  } catch (error) {
+    return Response.json({
+      status_code: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: error.message,
+      cause: error.cause?.message
+    }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
+  }
+}
+
 export const PUT = async (request: NextRequest, {params}: { params: { name: string } }) => {
   try {
     const backendName: string = params.name;
@@ -33,7 +57,7 @@ export const PUT = async (request: NextRequest, {params}: { params: { name: stri
 
     return Response.json({
       status_code: StatusCodes.OK,
-      message: `Backend ${backendName} mis à jour`
+      message: "Backend mis à jour avec succès"
     }, {status: StatusCodes.OK});
   } catch (error) {
     return Response.json({

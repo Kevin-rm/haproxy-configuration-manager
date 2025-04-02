@@ -123,7 +123,7 @@ export default function BackendList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/backend/${backend.name}/edit`} className="flex items-center">
+                          <Link href={`/backend/formulaire/${backend.name}`} className="flex items-center">
                             <Pencil className="h-4 w-4 mr-2"/> Modifier
                           </Link>
                         </DropdownMenuItem>

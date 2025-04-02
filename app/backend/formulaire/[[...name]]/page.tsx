@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import {useRouter} from "next/navigation";
+import React, {useEffect, useState} from "react";
+import {useParams, useRouter} from "next/navigation";
 import ContentLayout from "@/components/content-layout";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -36,9 +36,35 @@ const backendSchema = z.object({
 
 type BackendFormValues = z.infer<typeof backendSchema>;
 
-export default function BackendForm({backend}: { backend?: Backend }) {
+const fetchBackend = async (name: string) => {
+  const response = await fetch(`/api/backends/${name}`);
+  if (!response.ok)
+    throw new Error("Impossible de récupérer le backend");
+
+  const result = await response.json();
+  return result.data;
+};
+
+export default function BackendForm() {
   const router = useRouter();
-  const isUpdate = !!backend;
+  const params = useParams();
+  const backendName = params?.name as string;
+  const isUpdate = !!backendName;
+  const [backend, setBackend] = useState<Backend | undefined>(undefined);
+
+  useEffect(() => {
+    if (isUpdate) {
+      fetchBackend(backendName)
+        .then(data => setBackend(data))
+        .catch(error => {
+          toast({
+            title: "Erreur",
+            description: error.message,
+            variant: "destructive",
+          });
+        });
+    }
+  }, [backendName]);
 
   const form = useForm<BackendFormValues>({
     resolver: zodResolver(backendSchema),
@@ -52,7 +78,7 @@ export default function BackendForm({backend}: { backend?: Backend }) {
 
   const {fields, append, remove} = useFieldArray({
     control: form.control,
-    name: "servers",
+    name: "servers"
   });
 
   const saveBackend = async (values: BackendFormValues) => {
