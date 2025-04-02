@@ -173,16 +173,6 @@ export function generateConfigFileContents(config: HAProxyConfig): string {
     sections.push("");
   }
 
-  for (const backend of config.backends) {
-    sections.push(`backend ${backend.name}`);
-    
-    if (backend.mode) sections.push(`    mode ${backend.mode}`);
-    for (const server of backend.servers)
-      sections.push(`    server ${server.name} ${server.ip_address}:${server.port}${server.check ? " check" : ""}`);
-    
-    sections.push("");
-  }
-
   for (const frontend of config.frontends) {
     sections.push(`frontend ${frontend.name}`);
     
@@ -192,6 +182,16 @@ export function generateConfigFileContents(config: HAProxyConfig): string {
     
     if (frontend.default_backend)
       sections.push(`    default_backend ${frontend.default_backend.name}`);
+    
+    sections.push("");
+  }
+
+  for (const backend of config.backends) {
+    sections.push(`backend ${backend.name}`);
+    
+    if (backend.mode) sections.push(`    mode ${backend.mode}`);
+    for (const server of backend.servers)
+      sections.push(`    server ${server.name} ${server.ip_address}:${server.port}${server.check ? " check" : ""}`);
     
     sections.push("");
   }
