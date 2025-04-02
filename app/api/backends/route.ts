@@ -3,6 +3,7 @@ import {
   Backend,
   generateConfigFileContents,
   getConfigFileContents,
+  HAProxyConfig,
   parseConfigFileContents,
   writeContentsToConfigFile
 } from "@/lib/haproxy-service";
@@ -11,20 +12,21 @@ import {StatusCodes} from "@/lib/constants";
 export const POST = async (request: NextRequest) => {
   try {
     const backendData: Backend = await request.json();
-    const config = parseConfigFileContents(getConfigFileContents());
+    const config: HAProxyConfig = parseConfigFileContents(getConfigFileContents());
 
-    if (config.backends.findIndex(b => b.name === backendData.name) !== -1)
+    const backends: Backend[] = config.backends;
+    if (backends.findIndex(b => b.name === backendData.name) !== -1)
       return Response.json({
         status_code: StatusCodes.BAD_REQUEST,
         error: "Un backend avec le même nom existe déja"
       }, {status: StatusCodes.BAD_REQUEST});
 
-    config.backends.push(backendData);
+    backends.push(backendData);
     writeContentsToConfigFile(generateConfigFileContents(config));
 
     return Response.json({
       status_code: StatusCodes.OK,
-      message: `Backend ${backendData.name} créé'}`
+      message: "Backend créé avec succès"
     }, {status: StatusCodes.OK});
   } catch (error) {
     return Response.json({
