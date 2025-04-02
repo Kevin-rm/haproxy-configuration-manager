@@ -1,37 +1,41 @@
 import {NextRequest} from "next/server";
 import {
-  Backend,
-  getConfigFileContents,
+  Backend, 
+  getConfigFileContents, 
   parseConfigFileContents,
   writeContentsToConfigFile
 } from "@/lib/haproxy-service";
 
-export const POST = async (request: NextRequest) => {
+export const PUT = async (request: NextRequest, { params }: { params: { name: string } }) => {
   try {
-    const backendData: Backend = await request.json();
-    console.log(backendData);
+    // Récupérer le nom du backend depuis l'URL
+    const backendName = params.name;
     
-    if (!backendData.name || !backendData.servers || backendData.servers.length === 0) {
-      return new Response(JSON.stringify({ error: "Données de backend invalides" }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // Récupérer les données du backend à modifier
+    const backendData: Partial<Backend> = await request.json();
     
     // Lire et parser le fichier de configuration existant
     const configContent = getConfigFileContents();
     const config = parseConfigFileContents(configContent);
     
-    // Vérifier si le backend existe déjà
-    const existingBackendIndex = config.backends.findIndex(b => b.name === backendData.name);
+    // Trouver le backend à modifier
+    const existingBackendIndex = config.backends.findIndex(b => b.name === backendName);
     
-    if (existingBackendIndex !== -1) {
-      // Mettre à jour un backend existant
-      config.backends[existingBackendIndex] = backendData;
-    } else {
-      // Ajouter un nouveau backend
-      config.backends.push(backendData);
+    if (existingBackendIndex === -1) {
+      return new Response(JSON.stringify({ error: `Backend '${backendName}' non trouvé` }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
+    
+    // Mettre à jour les propriétés du backend
+    const updatedBackend = {
+      ...config.backends[existingBackendIndex],
+      ...backendData,
+      name: backendName // Garder le nom d'origine
+    };
+    
+    config.backends[existingBackendIndex] = updatedBackend as Backend;
     
     // Générer le contenu mis à jour du fichier de configuration
     const updatedContent = generateConfigContent(config);
@@ -41,16 +45,16 @@ export const POST = async (request: NextRequest) => {
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Backend ${backendData.name} ${existingBackendIndex !== -1 ? 'mis à jour' : 'créé'}`,
-      backend: backendData
+      message: `Backend ${backendName} mis à jour`,
+      backend: updatedBackend
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error("Erreur lors de la création/modification du backend:", error);
+    console.error("Erreur lors de la modification du backend:", error);
     return new Response(JSON.stringify({ 
-      error: "Erreur lors de la création/modification du backend",
+      error: "Erreur lors de la modification du backend",
       details: error instanceof Error ? error.message : String(error)
     }), {
       status: 500,

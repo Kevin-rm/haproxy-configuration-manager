@@ -42,7 +42,7 @@ export type Frontend = {
   default_backend: Backend;
 }
 
-type HAProxyConfig = {
+export type HAProxyConfig = {
   global: string[];
   defaults: string[];
   frontends: Frontend[];
@@ -156,4 +156,45 @@ export function parseConfigFileContents(contents: string): HAProxyConfig {
   if (currentBackend) backends.push(currentBackend as Backend);
 
   return {global, defaults, frontends, backends};
+}
+
+export function generateConfigFileContents(config: HAProxyConfig): string {
+  const sections: string[] = [];
+
+  if (config.global.length > 0) {
+    sections.push("global");
+    sections.push(...config.global.map(line => `    ${line}`));
+    sections.push("");
+  }
+  
+  if (config.defaults.length > 0) {
+    sections.push("defaults");
+    sections.push(...config.defaults.map(line => `    ${line}`));
+    sections.push("");
+  }
+
+  for (const backend of config.backends) {
+    sections.push(`backend ${backend.name}`);
+    
+    if (backend.mode) sections.push(`    mode ${backend.mode}`);
+    for (const server of backend.servers)
+      sections.push(`    server ${server.name} ${server.ip_address}:${server.port}${server.check ? " check" : ""}`);
+    
+    sections.push("");
+  }
+
+  for (const frontend of config.frontends) {
+    sections.push(`frontend ${frontend.name}`);
+    
+    if (frontend.mode) sections.push(`    mode ${frontend.mode}`);
+    for (const bind of frontend.binds)
+      sections.push(`    bind ${bind.ip_address}:${bind.port}`);
+    
+    if (frontend.default_backend)
+      sections.push(`    default_backend ${frontend.default_backend.name}`);
+    
+    sections.push("");
+  }
+  
+  return sections.join("\n");
 }
