@@ -62,7 +62,10 @@ export default function BackendForm({backend}: { backend?: Backend }) {
       body: JSON.stringify(values)
     });
 
-    if (!response.ok) throw new Error("Une erreur s'est produite lors de l'enregistrement de backend");
+    if (response.ok) return;
+
+    const data = await response.json();
+    throw new Error(data.error || "Une erreur s'est produite lors de l'enregistrement de backend");
   };
 
   const handleSubmit = (values: BackendFormValues) => {
@@ -74,11 +77,9 @@ export default function BackendForm({backend}: { backend?: Backend }) {
         });
       })
       .catch((error) => {
-        console.error(error);
-
         toast({
           title: "Erreur",
-          description: "Impossible d'enregistrer le backend",
+          description: error.message,
           variant: "destructive",
         });
       })
