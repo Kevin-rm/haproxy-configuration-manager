@@ -39,7 +39,7 @@ export type Frontend = {
   name: string;
   mode?: "http" | "tcp";
   binds: Bind[],
-  default_backend: Backend;
+  default_backend: string;
 }
 
 export type HAProxyConfig = {
@@ -126,11 +126,8 @@ export function parseConfigFileContents(contents: string): HAProxyConfig {
           currentFrontend.binds?.push(parseBindLine(trimmedLine));
         else if (trimmedLine.startsWith("mode"))
           currentFrontend.mode = trimmedLine.split(" ")[1] as "http" | "tcp";
-        else if (trimmedLine.startsWith("default_backend")) {
-          const backendName = trimmedLine.split(" ")[1];
-          const defaultBackend = backends.find(b => b.name === backendName);
-          if (defaultBackend) currentFrontend.default_backend = defaultBackend;
-        }
+        else if (trimmedLine.startsWith("default_backend"))
+          currentFrontend.default_backend = trimmedLine.split(" ")[1];
         break;
 
       case "backend":
@@ -181,7 +178,7 @@ export function generateConfigFileContents(config: HAProxyConfig): string {
       sections.push(`    bind ${bind.ip_address}:${bind.port}`);
     
     if (frontend.default_backend)
-      sections.push(`    default_backend ${frontend.default_backend.name}`);
+      sections.push(`    default_backend ${frontend.default_backend}`);
     
     sections.push("");
   }
