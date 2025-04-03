@@ -165,7 +165,7 @@ export default function BackendForm() {
                   render={({field}) =>
                     <FormItem>
                       <FormLabel className="text-base font-semibold">Mode</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} {...field}>
                         <FormControl>
                           <SelectTrigger className="h-11 bg-secondary/5">
                             <SelectValue placeholder="Choisir un mode"/>
