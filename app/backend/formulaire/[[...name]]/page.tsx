@@ -19,7 +19,9 @@ import {Backend} from "@/lib/haproxy-service";
 const serverSchema = z.object({
   name: z.string().min(1, "Le nom du serveur est requis"),
   ip_address: z.string().min(1, "L'adresse IP est requise"),
-  port: z.number()
+  port: z.number({
+    invalid_type_error: "Le port doit être un nombre entier"
+  })
     .min(1, "Le port doit être au moins 1")
     .max(65535, "Le port ne peut dépasser 65535"),
   check: z.boolean().optional()
@@ -276,7 +278,6 @@ export default function BackendForm() {
                                         const num = parseInt(value);
                                         field.onChange(value === "" || value === "-" || isNaN(num) ? value : num);
                                       }}
-                                      value={field.value}
                                     />
                                   </FormControl>
                                   <FormMessage/>
