@@ -1,5 +1,6 @@
 import fs from "fs";
 import {HAPROXY_CONFIG_FILE_PATH, UTF8_ENCODING} from "@/lib/constants";
+import {execSync} from "node:child_process";
 
 export function getConfigFileContents(): string {
   try {
@@ -12,6 +13,8 @@ export function getConfigFileContents(): string {
 export function writeContentsToConfigFile(contents: string): void {
   try {
     fs.writeFileSync(HAPROXY_CONFIG_FILE_PATH, contents, UTF8_ENCODING);
+
+    execSync("sudo systemctl reload haproxy");
   } catch (error) {
     throw new Error("Erreur durant la sauvegarde du fichier de configuration", {cause: error});
   }

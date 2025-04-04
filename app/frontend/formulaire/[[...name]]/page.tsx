@@ -1,80 +1,102 @@
 "use client";
 
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
 import ContentLayout from "@/components/content-layout";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useFieldArray, useForm, UseFormReturn} from "react-hook-form";
 import {toast} from "@/hooks/use-toast";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
-import {Checkbox} from "@/components/ui/checkbox";
 import {CirclePlus, ClipboardList, Trash2} from "lucide-react";
-import {Backend} from "@/lib/haproxy-service";
+import {Backend, Frontend} from "@/lib/haproxy-service";
 
-const serverSchema = z.object({
-  name: z.string().min(1, "Le nom du serveur est requis"),
+const bindSchema = z.object({
   ip_address: z.string().min(1, "L'adresse IP est requise"),
   port: z.number({
     invalid_type_error: "Le port doit être un nombre entier"
   })
     .min(1, "Le port doit être au moins 1")
     .max(65535, "Le port ne peut dépasser 65535"),
-  check: z.boolean().optional()
 });
 
-const backendSchema = z.object({
-  name: z.string().min(1, "Le nom du backend est requis"),
+const frontendSchema = z.object({
+  name: z.string().min(1, "Le nom du frontend est requis"),
   mode: z.enum(["http", "tcp"], {
     required_error: "Le mode est requis",
     invalid_type_error: "Le mode doit être http ou tcp"
   }),
-  servers: z.array(serverSchema)
+  binds: z.array(bindSchema).min(1, "Au moins un bind est requis"),
+  default_backend: z.string().min(1, "Le backend par défaut est requis"),
 });
 
-type BackendFormValues = z.infer<typeof backendSchema>;
+type FrontendFormValues = z.infer<typeof frontendSchema>;
 
-const fetchBackend = async (name: string) => {
-  const response = await fetch(`/api/backends/${name}`);
+const fetchFrontend = async (name: string) => {
+  const response = await fetch(`/api/frontends/${name}`);
 
   const jsonResponse = await response.json();
   if (!response.ok) throw new Error(jsonResponse.error);
 
-  return jsonResponse.data as Backend;
+  return jsonResponse.data as Frontend;
 };
 
-export default function BackendForm() {
+const fetchBackends = async () => {
+  const response = await fetch("/api/config-file?parse=true");
+  const jsonResponse = await response.json();
+
+  if (!response.ok) throw new Error(jsonResponse.error);
+
+  return jsonResponse.contents.backends as Backend[];
+};
+
+export default function FrontendForm() {
   const router = useRouter();
   const params = useParams();
-  const backendName = params?.name as string;
-  const isUpdate = !!backendName;
+  const frontendName = params?.name as string;
+  const isUpdate = !!frontendName;
+  const [backends, setBackends] = useState<Backend[]>([]);
 
-  const form: UseFormReturn<BackendFormValues> = useForm<BackendFormValues>({
-    resolver: zodResolver(backendSchema),
+  const form: UseFormReturn<FrontendFormValues> = useForm<FrontendFormValues>({
+    resolver: zodResolver(frontendSchema),
     defaultValues: {
       name: "",
       mode: "",
-      servers: []
+      binds: [{
+        ip_address: "*",
+        port: 80
+      }],
+      default_backend: "",
     },
     shouldUseNativeValidation: false
   });
 
   useEffect(() => {
+    fetchBackends()
+      .then(data => setBackends(data))
+      .catch(reason =>
+        toast({
+          title: "Erreur",
+          description: reason.message,
+          variant: "destructive",
+        }));
+
     if (!isUpdate) return;
 
-    fetchBackend(backendName)
+    fetchFrontend(frontendName)
       .then(value =>
         form.reset({
           name: value.name,
           mode: value.mode,
-          servers: value.servers
+          binds: value.binds,
+          default_backend: value.default_backend
         }))
       .catch(reason => {
-        router.push("/backend");
+        router.push("/frontend");
 
         toast({
           title: "Erreur",
@@ -82,15 +104,15 @@ export default function BackendForm() {
           variant: "destructive",
         });
       });
-  }, [backendName]);
+  }, [frontendName]);
 
   const {fields, append, remove} = useFieldArray({
     control: form.control,
-    name: "servers"
+    name: "binds"
   });
 
-  const saveBackend = async (values: BackendFormValues) => {
-    const response = await fetch(isUpdate ? `/api/backends/${backendName}` : "/api/backends", {
+  const saveFrontend = async (values: FrontendFormValues) => {
+    const response = await fetch(isUpdate ? `/api/frontends/${frontendName}` : "/api/frontends", {
       method: isUpdate ? "PUT" : "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify(values)
@@ -99,15 +121,15 @@ export default function BackendForm() {
     if (response.ok) return;
 
     const jsonResponse = await response.json();
-    throw new Error(jsonResponse.error || "Une erreur s'est produite lors de l'enregistrement de backend");
+    throw new Error(jsonResponse.error || "Une erreur s'est produite lors de l'enregistrement du frontend");
   };
 
-  const handleSubmit = (values: BackendFormValues) => {
-    saveBackend(values)
+  const handleSubmit = (values: FrontendFormValues) => {
+    saveFrontend(values)
       .then(() =>
         toast({
           title: "Succès",
-          description: `Le backend "${values.name}" a été ${isUpdate ? "mis à jour" : "créé"} avec succès`,
+          description: `Le frontend "${values.name}" a été ${isUpdate ? "mis à jour" : "créé"} avec succès`,
         }))
       .catch(error =>
         toast({
@@ -115,12 +137,12 @@ export default function BackendForm() {
           description: error.message,
           variant: "destructive",
         }))
-      .finally(() => router.push("/backend"));
+      .finally(() => router.push("/frontend"));
   }
 
   return <ContentLayout
     breadcrumbItems={[
-      {label: "Backend", link: "/backend"},
+      {label: "Frontend", link: "/frontend"},
       {label: isUpdate ? "Modifier" : "Créer"},
     ]}
   >
@@ -128,7 +150,7 @@ export default function BackendForm() {
       <div className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            {isUpdate ? "Modification" : "Création"} de Backend
+            {isUpdate ? "Modification" : "Création"} de Frontend
           </h1>
         </div>
       </div>
@@ -140,7 +162,7 @@ export default function BackendForm() {
             <span>Formulaire</span>
           </CardTitle>
           <CardDescription>
-            Entrer les informations de serveur backend
+            Entrer les informations de frontend
           </CardDescription>
         </CardHeader>
 
@@ -155,7 +177,7 @@ export default function BackendForm() {
                     <FormItem>
                       <FormLabel className="text-base font-semibold">Nom</FormLabel>
                       <FormControl>
-                        <Input className="h-11 bg-secondary/5" placeholder="ex: web_backend" {...field}/>
+                        <Input className="h-11 bg-secondary/5" placeholder="ex: web_frontend" {...field} />
                       </FormControl>
                       <FormMessage/>
                     </FormItem>
@@ -167,7 +189,7 @@ export default function BackendForm() {
                   render={({field}) =>
                     <FormItem>
                       <FormLabel className="text-base font-semibold">Mode</FormLabel>
-                      <Select onValueChange={field.onChange} {...field}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11 bg-secondary/5">
                             <SelectValue placeholder="Choisir un mode"/>
@@ -183,22 +205,46 @@ export default function BackendForm() {
                   }/>
               </div>
 
+              <FormField
+                control={form.control}
+                name="default_backend"
+                render={({field}) =>
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold">Backend par défaut</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-11 bg-secondary/5">
+                          <SelectValue placeholder="Choisir un backend"/>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {backends.map(backend => (
+                          <SelectItem key={backend.name} value={backend.name}>
+                            {backend.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage/>
+                  </FormItem>
+                }/>
+
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b pb-3">
                   <div className="space-y-1">
-                    <h3 className="text-lg font-semibold">Serveurs</h3>
+                    <h3 className="text-lg font-semibold">Binds</h3>
                     <p className="text-sm text-muted-foreground">
-                      Paramétrer les serveurs qui feront partie de ce backend
+                      Paramétrer les adresses d'écoute pour ce frontend
                     </p>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => append({name: "", ip_address: "", port: 80, check: false})}
+                    onClick={() => append({ip_address: "", port: 80})}
                     className="bg-secondary/5 hover:bg-secondary/20 transition-colors"
                   >
                     <CirclePlus className="h-4 w-4"/>
-                    Ajouter un serveur
+                    Ajouter un bind
                   </Button>
                 </div>
 
@@ -221,89 +267,48 @@ export default function BackendForm() {
                             <span className="text-xs font-semibold text-primary">{index + 1}</span>
                           </div>
                           <h4 className="text-sm font-medium">
-                            Serveur {index + 1}
+                            Bind {index + 1}
                           </h4>
                         </div>
 
-                        <div className="grid gap-5">
-                          <div className="grid grid-cols-3 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`servers.${index}.name`}
-                              render={({field}) =>
-                                <FormItem>
-                                  <FormLabel>Nom</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      className="h-9 bg-background"
-                                      placeholder={`ex: server${index + 1}`}
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage/>
-                                </FormItem>
-                              }/>
-
-                            <FormField
-                              control={form.control}
-                              name={`servers.${index}.ip_address`}
-                              render={({field}) =>
-                                <FormItem>
-                                  <FormLabel>Adresse IP</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      className="h-9 bg-background"
-                                      placeholder="ex: 192.168.1.10"
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage/>
-                                </FormItem>
-                              }/>
-
-                            <FormField
-                              control={form.control}
-                              name={`servers.${index}.port`}
-                              render={({field}) =>
-                                <FormItem>
-                                  <FormLabel>Port</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      className="h-9 bg-background"
-                                      type="number"
-                                      placeholder="ex: 80"
-                                      {...field}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        const num = parseInt(value);
-                                        field.onChange(value === "" || value === "-" || isNaN(num) ? value : num);
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage/>
-                                </FormItem>
-                              }/>
-                          </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`binds.${index}.ip_address`}
+                            render={({field}) =>
+                              <FormItem>
+                                <FormLabel>Adresse IP</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="h-9 bg-background"
+                                    placeholder="ex: 192.168.1.10"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage/>
+                              </FormItem>
+                            }/>
 
                           <FormField
                             control={form.control}
-                            name={`servers.${index}.check`}
+                            name={`binds.${index}.port`}
                             render={({field}) =>
-                              <FormItem
-                                className="flex flex-row items-start space-x-3 space-y-0 bg-secondary/10 p-3 rounded-md">
+                              <FormItem>
+                                <FormLabel>Port</FormLabel>
                                 <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className="mt-0.5"
+                                  <Input
+                                    className="h-9 bg-background"
+                                    type="number"
+                                    placeholder="ex: 80"
+                                    {...field}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      const num = parseInt(value);
+                                      field.onChange(value === "" || value === "-" || isNaN(num) ? value : num);
+                                    }}
                                   />
                                 </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel className="font-medium">Vérification d'état</FormLabel>
-                                  <p className="text-xs text-muted-foreground">
-                                    Activer la vérification périodique de disponibilité du serveur
-                                  </p>
-                                </div>
+                                <FormMessage/>
                               </FormItem>
                             }/>
                         </div>

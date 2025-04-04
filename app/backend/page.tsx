@@ -4,19 +4,54 @@ import React, {useEffect, useState} from "react";
 import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
-import {CheckCircle2, ChevronDown, ChevronRight, CirclePlus, Pencil, Settings2, Trash2, XCircle} from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  CirclePlus,
+  Pencil,
+  Settings2,
+  Trash2,
+  XCircle
+} from "lucide-react";
 import ContentLayout from "@/components/content-layout";
 import Link from "next/link";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {Backend} from "@/lib/haproxy-service";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {useToast} from "@/hooks/use-toast";
 
 const SERVER_HEIGHT = 90;
 
+const deleteBackend = async (name: string) => {
+  const response = await fetch(`/api/backends/${name}`, {
+    method: "DELETE",
+  });
+
+  const jsonResponse = await response.json();
+  if (!response.ok) throw new Error(jsonResponse.error);
+
+  return jsonResponse;
+}
+
 export default function BackendList() {
   const [backends, setBackends] = useState<Backend[]>([]);
-  const [, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [expandedBackends, setExpandedBackends] = useState<Set<string>>(new Set());
+  const [backendToDelete, setBackendToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const {toast} = useToast();
 
   const getScrollAreaHeight = (serversCount: number) => {
     if (serversCount <= 0) return "auto";
@@ -41,11 +76,35 @@ export default function BackendList() {
     return contents.backends;
   }
 
+  const handleDeleteBackend = async () => {
+    if (!backendToDelete) return;
+
+    setIsDeleting(true);
+    deleteBackend(backendToDelete)
+      .then(value => {
+        setBackends(prevBackends =>
+          prevBackends.filter(backend => backend.name !== backendToDelete));
+
+        toast({
+          title: "Succès",
+          description: value.message
+        });
+      })
+      .catch(reason =>
+        toast({
+          title: "Erreur",
+          description: reason.message,
+          variant: "destructive"
+        }))
+      .finally(() => {
+        setIsDeleting(false);
+        setBackendToDelete(null);
+      });
+  }
+
   useEffect(() => {
     fetchBackends()
-      .then(data => {
-        setBackends(data);
-      })
+      .then(data => setBackends(data))
       .finally(() => setLoading(false));
   }, []);
 
@@ -127,7 +186,10 @@ export default function BackendList() {
                             <Pencil className="h-4 w-4 mr-2"/> Modifier
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setBackendToDelete(backend.name)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2"/> Supprimer
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -182,6 +244,32 @@ export default function BackendList() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={!!backendToDelete} onOpenChange={(open) => !open && setBackendToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive"/>
+              Confirmation de suppression
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer le backend <strong>{backendToDelete}</strong> ?
+              <br/>
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBackend}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContentLayout>
   );
 }

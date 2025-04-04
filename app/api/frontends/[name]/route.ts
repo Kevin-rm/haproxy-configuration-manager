@@ -1,6 +1,6 @@
 import {NextRequest} from "next/server";
 import {
-  Backend,
+  Frontend,
   generateConfigFileContents,
   getConfigFileContents,
   HAProxyConfig,
@@ -11,23 +11,23 @@ import {StatusCodes} from "@/lib/constants";
 
 export const GET = async (request: NextRequest, {params}: { params: { name: string } }) => {
   try {
-    const backendName: string = params.name;
+    const frontendName: string = params.name;
 
-    const backend = parseConfigFileContents(getConfigFileContents()).backends.find(b => b.name === backendName);
-    if (!backend)
+    const frontend = parseConfigFileContents(getConfigFileContents()).frontends.find(f => f.name === frontendName);
+    if (!frontend)
       return Response.json({
         status_code: StatusCodes.NOT_FOUND,
-        error: `Backend "${backendName}" non trouvé`
+        error: `Frontend "${frontendName}" non trouvé`
       }, {status: StatusCodes.NOT_FOUND});
 
     return Response.json({
       status_code: StatusCodes.OK,
-      data: backend
+      data: frontend
     });
   } catch (error) {
     return Response.json({
       status_code: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: error.message,
+      error: error.message,
       cause: error.cause?.message
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }
@@ -35,29 +35,29 @@ export const GET = async (request: NextRequest, {params}: { params: { name: stri
 
 export const PUT = async (request: NextRequest, {params}: { params: { name: string } }) => {
   try {
-    const backendName: string = params.name;
-    const backendData: Backend = await request.json();
+    const frontendName: string = params.name;
+    const frontendData: Frontend = await request.json();
 
     const config: HAProxyConfig = parseConfigFileContents(getConfigFileContents());
-    const backends: Backend[] = config.backends;
+    const frontends: Frontend[] = config.frontends;
 
-    const existingBackendIndex = backends.findIndex(b => b.name === backendName);
-    if (existingBackendIndex === -1)
+    const existingFrontendIndex = frontends.findIndex(f => f.name === frontendName);
+    if (existingFrontendIndex === -1)
       return Response.json({
         status_code: StatusCodes.NOT_FOUND,
-        error: `Backend "${backendName}" non trouvé`
+        error: `Frontend "${frontendName}" non trouvé`
       }, {status: StatusCodes.NOT_FOUND});
 
-    backends[existingBackendIndex] = {
-      ...backends[existingBackendIndex],
-      ...backendData,
-      name: backendName
-    } as Backend;
+    frontends[existingFrontendIndex] = {
+      ...frontends[existingFrontendIndex],
+      ...frontendData,
+      name: frontendName
+    } as Frontend;
     writeContentsToConfigFile(generateConfigFileContents(config));
 
     return Response.json({
       status_code: StatusCodes.OK,
-      message: "Backend mis à jour avec succès"
+      message: "Frontend mis à jour avec succès"
     }, {status: StatusCodes.OK});
   } catch (error) {
     return Response.json({
@@ -70,24 +70,24 @@ export const PUT = async (request: NextRequest, {params}: { params: { name: stri
 
 export const DELETE = async (request: NextRequest, {params}: { params: { name: string } }) => {
   try {
-    const backendName: string = params.name;
+    const frontendName: string = params.name;
 
     const config: HAProxyConfig = parseConfigFileContents(getConfigFileContents());
-    const backends: Backend[] = config.backends;
+    const frontends: Frontend[] = config.frontends;
 
-    const existingBackendIndex = backends.findIndex(b => b.name === backendName);
-    if (existingBackendIndex === -1)
+    const existingFrontendIndex = frontends.findIndex(f => f.name === frontendName);
+    if (existingFrontendIndex === -1)
       return Response.json({
         status_code: StatusCodes.NOT_FOUND,
-        error: `Backend "${backendName}" non trouvé`
+        error: `Frontend "${frontendName}" non trouvé`
       }, {status: StatusCodes.NOT_FOUND});
 
-    config.backends.splice(existingBackendIndex, 1);
+    config.frontends.splice(existingFrontendIndex, 1);
     writeContentsToConfigFile(generateConfigFileContents(config));
 
     return Response.json({
       status_code: StatusCodes.OK,
-      message: "Backend supprimé avec succès"
+      message: "Frontend supprimé avec succès"
     }, {status: StatusCodes.OK});
   } catch (error) {
     return Response.json({
