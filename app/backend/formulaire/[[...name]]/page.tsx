@@ -106,7 +106,7 @@ export default function BackendForm() {
     saveBackend(values)
       .then(() =>
         toast({
-          title: isUpdate ? "Backend mis à jour" : "Backend créé",
+          title: "Succès",
           description: `Le backend "${values.name}" a été ${isUpdate ? "mis à jour" : "créé"} avec succès`,
         }))
       .catch(error =>

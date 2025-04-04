@@ -67,3 +67,33 @@ export const PUT = async (request: NextRequest, {params}: { params: { name: stri
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }
 }
+
+export const DELETE = async (request: NextRequest, {params}: { params: { name: string } }) => {
+  try {
+    const backendName: string = params.name;
+
+    const config: HAProxyConfig = parseConfigFileContents(getConfigFileContents());
+    const backends: Backend[] = config.backends;
+
+    const existingBackendIndex = backends.findIndex(b => b.name === backendName);
+    if (existingBackendIndex === -1)
+      return Response.json({
+        status_code: StatusCodes.NOT_FOUND,
+        error: `Backend "${backendName}" non trouvé`
+      }, {status: StatusCodes.NOT_FOUND});
+
+    config.backends.splice(existingBackendIndex, 1);
+    writeContentsToConfigFile(generateConfigFileContents(config));
+
+    return Response.json({
+      status_code: StatusCodes.OK,
+      message: "Backend supprimé avec succès"
+    }, {status: StatusCodes.OK});
+  } catch (error) {
+    return Response.json({
+      status_code: StatusCodes.INTERNAL_SERVER_ERROR,
+      error: error.message,
+      cause: error.cause?.message
+    }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
+  }
+}
