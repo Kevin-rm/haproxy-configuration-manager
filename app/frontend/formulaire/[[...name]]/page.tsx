@@ -251,15 +251,16 @@ export default function FrontendForm() {
                 <div className="grid gap-4">
                   {fields.map((field, index) =>
                     <Card key={field.id} className="relative border bg-card">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(index)}
-                        className="absolute right-3 top-3 h-7 w-7 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4"/>
-                      </Button>
+                      {fields.length > 1 &&
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => remove(index)}
+                          className="absolute right-3 top-3 h-7 w-7 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4"/>
+                        </Button>}
 
                       <CardContent className="p-5">
                         <div className="mb-5 flex items-center">
