@@ -52,6 +52,138 @@ export type HAProxyConfig = {
   backends: Backend[];
 }
 
+export type LogLevel = 'info' | 'warning' | 'error';
+
+export type LogEntry = {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  source: string;
+}
+
+export type ServiceStatus = {
+  running: boolean;
+  enabled: boolean;
+  version: string;
+  uptime: string;
+}
+
+export function getServiceStatus(): ServiceStatus {
+  try {
+    const isRunning = execSync('systemctl is-active haproxy').toString().trim() === 'active';
+    const isEnabled = execSync('systemctl is-enabled haproxy').toString().trim() === 'enabled';
+    const versionOutput = execSync('haproxy -v').toString().trim();
+    const version = versionOutput.split('\n')[0];
+    
+    let uptime = 'Non disponible';
+    if (isRunning) {
+      try {
+        const uptimeOutput = execSync('systemctl show haproxy --property=ActiveEnterTimestamp').toString().trim();
+        const startTimeStr = uptimeOutput.split('=')[1];
+        const startTime = new Date(startTimeStr);
+        const now = new Date();
+        const uptimeMs = now.getTime() - startTime.getTime();
+        
+        const days = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((uptimeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        uptime = `${days} jours, ${hours} heures, ${minutes} minutes`;
+      } catch (error) {
+        uptime = 'Calcul impossible';
+      }
+    }
+    
+    return {
+      running: isRunning,
+      enabled: isEnabled,
+      version,
+      uptime
+    };
+  } catch (error) {
+    throw new Error("Impossible de récupérer l'état du service HAProxy", {cause: error});
+  }
+}
+
+export function startService(): void {
+  try {
+    execSync('sudo systemctl start haproxy');
+  } catch (error) {
+    throw new Error("Impossible de démarrer le service HAProxy", {cause: error});
+  }
+}
+
+export function stopService(): void {
+  try {
+    execSync('sudo systemctl stop haproxy');
+  } catch (error) {
+    throw new Error("Impossible d'arrêter le service HAProxy", {cause: error});
+  }
+}
+
+export function restartService(): void {
+  try {
+    execSync('sudo systemctl restart haproxy');
+  } catch (error) {
+    throw new Error("Impossible de redémarrer le service HAProxy", {cause: error});
+  }
+}
+
+export function reloadService(): void {
+  try {
+    execSync('sudo systemctl reload haproxy');
+  } catch (error) {
+    throw new Error("Impossible de recharger la configuration HAProxy", {cause: error});
+  }
+}
+
+export function validateConfig(): { valid: boolean; message: string } {
+  try {
+    const output = execSync('haproxy -c -f /etc/haproxy/haproxy.cfg').toString();
+    return { 
+      valid: true, 
+      message: "La configuration HAProxy est valide."
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { 
+      valid: false, 
+      message: `Configuration invalide: ${errorMessage}`
+    };
+  }
+}
+
+export function getLogs(limit: number = 100): LogEntry[] {
+  try {
+    const logOutput = execSync(`journalctl -u haproxy --no-pager -n ${limit}`).toString();
+    const logLines = logOutput.split('\n').filter(line => line.trim() !== '');
+    
+    return logLines.map(line => {
+      const timestampMatch = line.match(/^([A-Za-z]+ \d+ \d+:\d+:\d+)/);
+      const timestamp = timestampMatch ? timestampMatch[1] : new Date().toLocaleString();
+      
+      let level: LogLevel = 'info';
+      if (line.toLowerCase().includes('error') || line.toLowerCase().includes('err') || line.toLowerCase().includes('emerg')) {
+        level = 'error';
+      } else if (line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn')) {
+        level = 'warning';
+      }
+      
+      const message = line.replace(/^[A-Za-z]+ \d+ \d+:\d+:\d+ [^ ]+ [^ ]+: /, '').trim();
+      
+      return {
+        timestamp,
+        level,
+        message,
+        source: 'haproxy'
+      };
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des logs:", error);
+    return [];
+  }
+}
+
 export function parseConfigFileContents(contents: string): HAProxyConfig {
   const lines = contents.split("\n");
 
