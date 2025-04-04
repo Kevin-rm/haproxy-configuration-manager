@@ -104,9 +104,7 @@ export default function BackendList() {
 
   useEffect(() => {
     fetchBackends()
-      .then(data => {
-        setBackends(data);
-      })
+      .then(data => setBackends(data))
       .finally(() => setLoading(false));
   }, []);
 
