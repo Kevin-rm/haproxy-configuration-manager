@@ -79,8 +79,15 @@ export function getServiceStatus(): ServiceStatus {
     if (isRunning) {
       try {
         const uptimeOutput = execSync('systemctl show haproxy --property=ActiveEnterTimestamp').toString().trim();
-        const startTimeStr = uptimeOutput.split('=')[1];
-        const startTime = new Date(startTimeStr);
+        const startTimeStr = uptimeOutput.split('=')[1].trim();
+
+        // Convertir "Mon 2025-04-07 10:42:31 CEST" -> "2025-04-07T10:42:31"
+        const match = startTimeStr.match(/\w+\s+(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/);
+        if (!match) throw new Error("Format de date inattendu : " + startTimeStr);
+
+        const isoDateStr = `${match[1]}T${match[2]}`;
+        const startTime = new Date(isoDateStr);
+
         const now = new Date();
         const uptimeMs = now.getTime() - startTime.getTime();
         
