@@ -18,7 +18,7 @@ export const GET = async (request: NextRequest) => {
     return Response.json({
       status_code: StatusCodes.INTERNAL_SERVER_ERROR,
       error: error.message,
-      cause: error.cause.message
+      cause: error.cause?.message
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }
 }
@@ -35,8 +35,8 @@ export const POST = async (request: Request) => {
   } catch (error) {
     return Response.json({
       status_code: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: error.message,
-      cause: error.cause.message
+      error: error.message,
+      cause: error.cause?.message
     }, {status: StatusCodes.INTERNAL_SERVER_ERROR});
   }
 }

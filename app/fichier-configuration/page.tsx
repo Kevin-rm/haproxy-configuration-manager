@@ -11,11 +11,11 @@ import {useToast} from "@/hooks/use-toast";
 
 const fetchConfigFile = async () => {
   const response = await fetch("/api/config-file");
-  if (!response.ok)
-    throw new Error("Erreur lors du chargement de la configuration");
 
-  const data = await response.json();
-  return data.contents;
+  const jsonResponse = await response.json();
+  if (!response.ok) throw new Error(jsonResponse.error || "Erreur lors du chargement de la configuration");
+
+  return jsonResponse.contents;
 };
 
 const saveConfigFile = async (contents: string) => {
@@ -27,35 +27,32 @@ const saveConfigFile = async (contents: string) => {
 
   if (response.ok) return;
 
-  const data = await response.json();
-  throw new Error(data.error || "Erreur lors de la sauvegarde");
+  const jsonResponse = await response.json();
+  throw new Error(jsonResponse.error || "Erreur lors de la sauvegarde");
 };
 
 export default function ConfigFilePage(): JSX.Element {
   const [configContent, setConfigContent] = useState<string>("");
   const [originalContent, setOriginalContent] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState<Boolean>(false);
+  const [hasChanges, setHasChanges] = useState<Boolean>(false);
   const {toast} = useToast();
 
   const handleLoadConfig = () => {
     setIsLoading(true);
 
     fetchConfigFile()
-      .then((contents) => {
-        setConfigContent(contents);
-        setOriginalContent(contents);
+      .then(value => {
+        setConfigContent(value);
+        setOriginalContent(value);
       })
-      .catch((error) => {
+      .catch(reason =>
         toast({
           title: "Erreur",
-          description: error.message,
+          description: reason.message,
           variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+        }))
+      .finally(() => setIsLoading(false));
   };
 
   const handleSaveConfig = () => {
@@ -70,16 +67,13 @@ export default function ConfigFilePage(): JSX.Element {
           description: "Configuration correctement sauvegardée",
         });
       })
-      .catch((error) => {
+      .catch((error) =>
         toast({
           title: "Erreur",
           description: error.message,
           variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+        }))
+      .finally(() => setIsLoading(false));
   };
 
   const handleReset = () => {
@@ -87,13 +81,8 @@ export default function ConfigFilePage(): JSX.Element {
       setConfigContent(originalContent);
   };
 
-  useEffect(() => {
-    handleLoadConfig();
-  }, []);
-
-  useEffect(() => {
-    setHasChanges(configContent !== originalContent);
-  }, [configContent, originalContent]);
+  useEffect(() => handleLoadConfig(), []);
+  useEffect(() => setHasChanges(configContent !== originalContent), [configContent, originalContent]);
 
   return (
     <ContentLayout breadcrumbItems={[{label: "Fichier de configuration"}]}>
@@ -119,11 +108,7 @@ export default function ConfigFilePage(): JSX.Element {
               disabled={isLoading || !hasChanges}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isLoading ? (
-                <Loader2 className="animate-spin"/>
-              ) : (
-                <Save/>
-              )}
+              {isLoading ? <Loader2 className="animate-spin"/> : <Save/>}
               Sauvegarder
             </Button>
           </div>
